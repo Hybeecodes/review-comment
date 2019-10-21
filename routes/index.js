@@ -40,6 +40,7 @@ router.get('/comments/:videoId', async (req, res, next) => {
       )
     });
     const csvWriter = CsvWriter(videoId, 'comment');
+    //generate CSV
     csvWriter.writeRecords(records)       // returns a promise
     .then(() => {
       res.status(200).send('success');
@@ -54,12 +55,25 @@ router.get('/comments/:videoId', async (req, res, next) => {
 
 router.get('/comment/download/:Id', (req, res) => {
   try {
+    // serve comment csv file
     const { Id } = req.params;
     const file = `comments/comments-${Id}.csv`
     res.download(file); // Set disposition and send it.
   } catch (error) {
     console.log(error);
     res.status(500).send('Sorry, Unable to download Comment File');
+  }
+});
+
+router.get('/review/download/:Id', (req, res) => {
+  try {
+    // serve review csv file
+    const { Id } = req.params;
+    const file = `reviews/reviews-${Id}.csv`
+    res.download(file); // Set disposition and send it.
+  } catch (error) {
+    console.log(error);
+    res.status(500).send('Sorry, Unable to download Review File');
   }
 });
 
