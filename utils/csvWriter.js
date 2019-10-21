@@ -1,9 +1,15 @@
 'use strict';
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 
-module.exports = (videoId) => {
+module.exports = (videoId, type) => {
+    let path;
+    if(type === 'review'){
+        path = `reviews/reviews-${videoId}.csv`
+    }else{
+        path = `comments/comments-${videoId}.csv`;
+    }
     const csvWriter = createCsvWriter({
-        path: `comments/comments-${videoId}.csv`,
+        path,
         header: [
             {id: 'username', title: 'UserName'},
             {id: 'date', title: 'Date'},
