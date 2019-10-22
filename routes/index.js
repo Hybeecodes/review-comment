@@ -6,6 +6,7 @@ const cheerio = require('cheerio');
 const config = require('../config/config');
 const CsvWriter = require('../utils/csvWriter');
 const nanoid = require('nanoid');
+const scrap_reviews = require('../utils/srape_reviews');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -89,42 +90,29 @@ router.get('/reviews', (req, res) => {
         let $ = cheerio.load(html);
         const all_reviews_url = $('.a-link-emphasis').attr('href');
         // scrape all reviews page
-        axios(`https://www.amazon.com${all_reviews_url}`)
-        .then(result => {
-          $ = cheerio.load(result.data);
-          const reviews = $('.review-views').find('.review');
-          reviews.each((i, rev) => {
-            const username = $(rev).find('span.a-profile-name').text();
-            const date = $(rev).find('.review-date').text();
-            const star_rating = $(rev).find('.review-rating > .a-icon-alt').text();
-            const review_comment = $(rev).find('.review-title > span').text();
-            const link = $(rev).find('.review-title').attr('href');
-            records.push(
-              {
-                username,
-                date,
-                star_rating,
-                review_comment,
-                link
-              }
-            )
-      })
-      // generate CSV
-      const id = nanoid();
-      const csvWriter = CsvWriter(id, 'review');
-      csvWriter.writeRecords(records)       // returns a promise
-            .then(() => {
-              console.log('Reviews CSV generated')
-              // send email to user
-            }).catch((err) => {
-              console.log('error occured ', err);
-            })
-            res.status(200).send('success'); // return succes message to the user while generating csv
-          });
-        }).catch((error) => {
-
+        let newReviews = scrap_reviews(`https://www.amazon.com${all_reviews_url}`);
+        records.push(...newReviews); // add first set of reviews
+        res.status(200).send('success'); // return succes message to the user while generating csv
+        // check if there is a next page
+          const nextPage = $('.a-last').attr('href');
+          while (nextPage) {
+            newReviews = scrap_reviews(`https://www.amazon.com${nextPage}`); //scrape subsequent set of reviews
+            records.push(...newReviews); // add subsequent set of reviews
+          }
+        // generate CSV
+        const id = nanoid();
+        const csvWriter = CsvWriter(id, 'review');
+        csvWriter.writeRecords(records)       // returns a promise
+        .then(() => {
+            console.log('Reviews CSV generated')
+            // send email to user
+        }).catch((err) => {
+            console.log('error occured ', err);
         })
-      .catch(console.error);
+      }).catch((error) => {
+
+    })
+  .catch(console.error);
 })
 
 
