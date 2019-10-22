@@ -85,17 +85,20 @@ router.get('/reviews', (req, res) => {
   }
   let records = [];
   axios(url)
-      .then(response => {
+      .then(async response => {
         const html = response.data;
         let $ = cheerio.load(html);
         const all_reviews_url = $('.a-link-emphasis').attr('href');
         // scrape all reviews page
-        let newReviews = scrap_reviews(`https://www.amazon.com${all_reviews_url}`);
+        let newReviews = await scrap_reviews(`https://www.amazon.com${all_reviews_url}`);
+        console.log('... first reviews ...');
         records.push(...newReviews); // add first set of reviews
         res.status(200).send('success'); // return succes message to the user while generating csv
         // check if there is a next page
-          const nextPage = $('.a-last').attr('href');
+          const nextPage = $('.a-form-actions').find('.a-last > a').html();
+          console.log(nextPage);
           while (nextPage) {
+            console.log('... subsequent reviews ...');
             newReviews = scrap_reviews(`https://www.amazon.com${nextPage}`); //scrape subsequent set of reviews
             records.push(...newReviews); // add subsequent set of reviews
           }
